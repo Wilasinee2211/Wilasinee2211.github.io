@@ -1,0 +1,199 @@
+<main 
+  (mousemove)="onMouseMove($event)" 
+  (mouseup)="onMouseUp()"
+  (mouseleave)="onMouseLeave()"
+  class="min-h-screen w-full bg-gradient-to-br from-gray-900 via-purple-900 to-black text-gray-200 flex flex-col items-center justify-center p-4 overflow-hidden select-none">
+  
+  <audio 
+    #audioPlayer 
+    (ended)="playNextTrack()" 
+    (timeupdate)="onTimeUpdate($event)" 
+    (loadedmetadata)="onTimeUpdate($event)">
+  </audio>
+
+  @if (isLoading()) {
+    <div class="flex flex-col items-center justify-center text-center">
+      <div class="w-16 h-16 border-4 border-dashed border-pink-400 rounded-full animate-spin"></div>
+      <h2 class="mt-6 text-2xl font-orbitron text-pink-300">{{ currentLoadingMessage() }}</h2>
+      <p class="text-purple-400 mt-2">Please wait...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="text-center bg-red-900/50 border border-red-700 p-8 rounded-lg shadow-2xl">
+      <h2 class="text-3xl font-orbitron text-red-300 mb-4">Connection Error</h2>
+      <p class="text-red-400 mb-6">{{ error() }}</p>
+      <button (click)="generateCassette()" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-md transition-all duration-300 transform hover:scale-105">
+        Retry
+      </button>
+    </div>
+  }
+
+  @if (cassetteData(); as data) {
+    <div class="w-full max-w-4xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+      
+      <!-- Cassette Player -->
+      <div class="w-full max-w-md" style="perspective: 1000px;">
+        <div 
+          (mousedown)="onMouseDown($event)"
+          class="relative w-full aspect-[3/2] rounded-lg shadow-2xl" 
+          [class.cursor-grab]="!isDragging()"
+          [class.cursor-grabbing]="isDragging()"
+          [style.transform]="cassetteTransform()"
+          style="transform-style: preserve-3d;">
+          
+          <!-- New Cassette Body -->
+          <div class="w-full h-full bg-white/10 backdrop-blur-sm rounded-md flex flex-col p-2 border border-white/30 shadow-inner">
+            <!-- Top Label Area -->
+            <div class="h-[45%] bg-stone-100 rounded-t-sm p-2 flex flex-col text-black shadow-lg border-b border-gray-400">
+              <div class="flex justify-between items-start">
+                <div class="w-2/3">
+                  <h3 class="font-orbitron text-sm font-bold truncate leading-tight">{{ data.title }}</h3>
+                  <p class="text-xs truncate">{{ data.artist }}</p>
+                </div>
+                <div class="text-right font-mono text-xs">
+                  <p class="font-bold">C-90</p>
+                  <p class="text-[10px]">STEREO</p>
+                </div>
+              </div>
+              <div class="flex-grow mt-2 border-t-2 border-stone-300 pt-2 space-y-1.5 flex flex-col justify-center">
+                <!-- Ruled lines -->
+                <div class="w-full h-[1px] bg-blue-300/70"></div>
+                <div class="w-full h-[1px] bg-blue-300/70"></div>
+                <div class="w-full h-[1px] bg-blue-300/70"></div>
+              </div>
+            </div>
+            
+            <!-- Bottom transparent area with spools -->
+            <div class="h-[55%] relative flex items-center justify-around p-1">
+              <!-- Left Spool -->
+              <div class="w-16 h-16 bg-white/80 rounded-full flex items-center justify-center relative z-10">
+                <div class="w-14 h-14 bg-gray-800 rounded-full shadow-inner flex items-center justify-center transition-all duration-300" [class.shadow-lg]="isPlaying()" [class.shadow-pink-500/30]="isPlaying()">
+                  <div [class.animate-spin-slow]="isPlaying()" class="absolute">
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(0deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(120deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(240deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Right Spool -->
+              <div class="w-16 h-16 bg-white/80 rounded-full flex items-center justify-center relative z-10">
+                <div class="w-14 h-14 bg-gray-800 rounded-full shadow-inner flex items-center justify-center transition-all duration-300" [class.shadow-lg]="isPlaying()" [class.shadow-pink-500/30]="isPlaying()">
+                  <div [class.animate-spin-slow]="isPlaying()" class="absolute">
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(0deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(120deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                    <div class="tape-spool-hole" style="transform: translate(-50%, -50%) rotate(240deg) translateY(-6px); background-color: #f0f0f0;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Small central window for tape guide -->
+              <div class="absolute bottom-3 left-1/2 -translate-x-1/2 w-10 h-4 border border-white/20 rounded-sm flex items-center justify-center">
+                  <div class="w-1 h-2 bg-gray-400 rounded-full mx-0.5"></div>
+                  <div class="w-1 h-2 bg-gray-400 rounded-full mx-0.5"></div>
+              </div>
+            </div>
+          </div>
+
+           <!-- Screw holes -->
+           <div class="absolute top-1 left-1 w-2 h-2 bg-gray-600/80 rounded-full shadow-inner border border-gray-900/80"></div>
+           <div class="absolute top-1 right-1 w-2 h-2 bg-gray-600/80 rounded-full shadow-inner border border-gray-900/80"></div>
+           <div class="absolute bottom-1 left-1 w-2 h-2 bg-gray-600/80 rounded-full shadow-inner border border-gray-900/80"></div>
+           <div class="absolute bottom-1 right-1 w-2 h-2 bg-gray-600/80 rounded-full shadow-inner border border-gray-900/80"></div>
+        </div>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="w-full max-w-md text-center lg:text-left">
+        @if (data.albumCoverUrl) {
+          <img 
+            [src]="data.albumCoverUrl" 
+            [alt]="'Album cover for ' + data.title"
+            class="w-40 h-40 rounded-lg mx-auto lg:mx-0 mb-6 border-4 border-purple-500/80 shadow-lg shadow-purple-500/30 object-cover transform transition-transform duration-500 hover:scale-105"
+            style="transform: rotateY(-5deg) rotateX(2deg);">
+        }
+        <h1 class="font-orbitron text-4xl font-bold text-pink-300 drop-shadow-[0_2px_2px_rgba(244,114,182,0.5)]">{{ data.title }}</h1>
+        <h2 class="text-xl text-purple-300 mt-1 mb-4">{{ data.artist }}</h2>
+        <p class="text-gray-400 mb-6">{{ data.description }}</p>
+
+        <div class="bg-black/30 p-4 rounded-lg border border-purple-700/50 mb-4">
+          <h4 class="font-orbitron text-lg text-pink-400 mb-2">Tracklist</h4>
+          <ol class="list-decimal list-inside text-left text-purple-200 space-y-1">
+            @for(track of data.tracks; track track.title; let i = $index) {
+              <li 
+                (click)="playTrack(i)"
+                class="p-1 rounded-md transition-all duration-200"
+                [class.cursor-pointer]="track.url"
+                [class.hover:bg-purple-700/70]="track.url"
+                [class.opacity-50]="!track.url"
+                [class.bg-purple-800/50]="currentTrackIndex() === i"
+                [class.text-pink-300]="currentTrackIndex() === i">
+                {{ track.title }}
+              </li>
+            }
+          </ol>
+        </div>
+
+        <!-- Progress and Seek Controls -->
+        <div class="my-4 px-1">
+          <input 
+              type="range" 
+              class="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              [value]="currentTime()"
+              [max]="duration() || 0"
+              (input)="onSeek($event)"
+              [disabled]="!currentTrack()">
+          <div class="flex justify-between text-xs text-purple-300 mt-1 font-mono">
+              <span>{{ formatTime(currentTime()) }}</span>
+              <span>{{ formatTime(duration()) }}</span>
+          </div>
+        </div>
+
+        <div class="mt-4 w-full space-y-8">
+          <!-- Playback & Volume Controls -->
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-4">
+            <button (click)="playPreviousTrack()" [disabled]="!canPlayPrevious()" title="Previous Track" class="w-14 h-14 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+            </button>
+            <button (click)="togglePlay()" title="{{ isPlaying() ? 'Pause' : 'Play' }}" class="w-20 h-20 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center" [class]="isPlaying() ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-pink-500 hover:bg-pink-400 text-black'">
+              @if (isPlaying()) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              }
+            </button>
+            <button (click)="playNextTrack()" [disabled]="!canPlayNext()" title="Next Track" class="w-14 h-14 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button (click)="stop()" title="Stop" class="w-14 h-14 bg-red-600 hover:bg-red-500 text-white font-bold rounded-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+              <div class="w-6 h-6 bg-white"></div>
+            </button>
+          
+            <!-- Volume Control -->
+            <div class="flex items-center gap-2 w-full justify-center sm:justify-start sm:w-auto sm:flex-1 sm:max-w-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+                <input 
+                    type="range" 
+                    class="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                    min="0"
+                    max="100"
+                    [value]="volume() * 100"
+                    (input)="onVolumeChange($event)">
+              </div>
+          </div>
+           
+          <!-- Generate Button -->
+          <div class="w-full flex justify-center lg:justify-start">
+            <button (click)="generateCassette()" title="Generate New Mixtape" class="px-8 py-4 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 font-orbitron text-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l16 16"/></svg>
+              <span>Generate Mixtape</span>
+           </button>
+         </div>
+        </div>
+      </div>
+
+    </div>
+  }
+</main>
