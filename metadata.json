@@ -1,0 +1,5 @@
+{
+  "name": "Retro Cassette Showcase",
+  "description": "A visually stunning, retro-themed cassette tape showcase. Generates unique mixtape details using the Gemini API and displays them on an interactive, animated cassette player with a cool vaporwave aesthetic.",
+  "requestFramePermissions": []
+}
