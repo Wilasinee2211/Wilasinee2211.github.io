@@ -38,6 +38,7 @@ const SOUR_ALBUM_DATA: CassetteData = {
 
 @Component({
   selector: 'app-root',
+  imports: [CommonModule,],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
